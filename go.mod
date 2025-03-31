@@ -1,3 +1,3 @@
-module github.com/trungdung1711/go-semantic-checker-inspection
+module github.com/trungdung1711/go-inspection
 
 go 1.23.6
