@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+func formatObject(obj types.Object) string {
+	if obj == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%s (%s)", obj.Name(), obj.Type())
+}
+
 func PrintScope(scope *types.Scope, depth int) {
 	if scope == nil {
 		return
@@ -19,6 +26,13 @@ func PrintScope(scope *types.Scope, depth int) {
 	names := scope.Names()
 	for _, name := range names {
 		obj := scope.Lookup(name)
+
+		// Skip package-level imports like fmt
+		if obj.Pkg() != nil && obj.Pkg().Path() == "fmt" {
+			continue
+		}
+
+		// Print name, type and handle it differently for packages
 		fmt.Printf("%s├── %s: %s\n", indent, name, formatObject(obj))
 
 		// Handle struct types
@@ -26,14 +40,14 @@ func PrintScope(scope *types.Scope, depth int) {
 			underlying := typeName.Type().Underlying()
 			if structType, ok := underlying.(*types.Struct); ok {
 				fmt.Printf("%s    ├── Struct Fields:\n", indent)
-				for j := range structType.NumFields() {
+				for j := 0; j < structType.NumFields(); j++ {
 					field := structType.Field(j)
 					fmt.Printf("%s    │   ├── %s: %s\n", indent, field.Name(), field.Type())
 				}
 			}
 			if iface, ok := underlying.(*types.Interface); ok {
 				fmt.Printf("%s    ├── Interface Methods:\n", indent)
-				for j := range iface.NumMethods() {
+				for j := 0; j < iface.NumMethods(); j++ {
 					method := iface.Method(j)
 					fmt.Printf("%s    │   ├── %s: %s\n", indent, method.Name(), method.Type())
 				}
@@ -47,7 +61,7 @@ func PrintScope(scope *types.Scope, depth int) {
 
 		// Handle nested methods in named types
 		if named, ok := obj.Type().(*types.Named); ok {
-			for i := range named.NumMethods() {
+			for i := 0; i < named.NumMethods(); i++ {
 				method := named.Method(i)
 				fmt.Printf("%s    ├── Method: %s (%s)\n", indent, method.Name(), method.Type())
 			}
@@ -55,14 +69,7 @@ func PrintScope(scope *types.Scope, depth int) {
 	}
 
 	// Handle nested scopes
-	for i := range scope.NumChildren() {
+	for i := 0; i < scope.NumChildren(); i++ {
 		PrintScope(scope.Child(i), depth+1)
 	}
-}
-
-func formatObject(obj types.Object) string {
-	if obj == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%s (%s)", obj.Name(), obj.Type())
 }
