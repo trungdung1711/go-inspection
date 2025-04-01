@@ -6,70 +6,81 @@ import (
 	"strings"
 )
 
-func formatObject(obj types.Object) string {
-	if obj == nil {
-		return "nil"
+// printObject prints the basic and important details of a single object in the scope in one line.
+func printObject(indent string, name string, obj types.Object) {
+	// Prepare the type of the object
+	objType := obj.Type()
+
+	// Prepare additional details about the object
+	var typeDetails string
+
+	// Switch to determine the type of the object and provide specific details
+	switch t := objType.Underlying().(type) {
+	case *types.Signature:
+		// Function signature
+		typeDetails = fmt.Sprintf("function, returns: %s", t.Results())
+	case *types.Struct:
+		// Struct type, print the number of fields
+		typeDetails = fmt.Sprintf("struct with %d field(s)", t.NumFields())
+	case *types.Basic:
+		// Basic types (int, string, etc.)
+		typeDetails = fmt.Sprintf("basic type, %s", t.String())
+	case *types.Array:
+		// Array type
+		typeDetails = fmt.Sprintf("array of %s with length %d", t.Elem(), t.Len())
+	case *types.Slice:
+		// Slice type
+		typeDetails = fmt.Sprintf("slice of %s", t.Elem())
+	case *types.Map:
+		// Map type
+		typeDetails = fmt.Sprintf("map with key type %s and value type %s", t.Key(), t.Elem())
+	case *types.Named:
+		// Named types (e.g., struct, interface)
+		typeDetails = fmt.Sprintf("named type, %s", t.Obj().Name())
+	default:
+		// Default case for other types
+		typeDetails = objType.String()
 	}
-	return fmt.Sprintf("%s (%s)", obj.Name(), obj.Type())
+
+	// Print object details in one line
+	fmt.Printf("%s├── %s: %s (%s)\n", indent, name, objType, typeDetails)
 }
 
+// PrintScope recursively prints the scope tree and its contained elements in a tree-like structure with more detailed information.
 func PrintScope(scope *types.Scope, depth int) {
 	if scope == nil {
 		return
 	}
 
-	indent := strings.Repeat("    ", depth)
-	if depth == 0 {
-		fmt.Println("Global Scope (package main)")
-	}
+	// Indentation to show the depth in the scope hierarchy
+	indent := strings.Repeat("│   ", depth)
 
+	// Print the current scope's name
+	fmt.Printf("%sScope (Level %d):\n", indent, depth)
+
+	// Store the names of objects within the scope
 	names := scope.Names()
-	for _, name := range names {
+
+	// Collect the objects and print them with more detailed information
+	for i, name := range names {
 		obj := scope.Lookup(name)
 
-		// Skip package-level imports like fmt
-		if obj.Pkg() != nil && obj.Pkg().Path() == "fmt" {
-			continue
-		}
-
-		// Print name, type and handle it differently for packages
-		fmt.Printf("%s├── %s: %s\n", indent, name, formatObject(obj))
-
-		// Handle struct types
-		if typeName, ok := obj.(*types.TypeName); ok {
-			underlying := typeName.Type().Underlying()
-			if structType, ok := underlying.(*types.Struct); ok {
-				fmt.Printf("%s    ├── Struct Fields:\n", indent)
-				for j := 0; j < structType.NumFields(); j++ {
-					field := structType.Field(j)
-					fmt.Printf("%s    │   ├── %s: %s\n", indent, field.Name(), field.Type())
-				}
-			}
-			if iface, ok := underlying.(*types.Interface); ok {
-				fmt.Printf("%s    ├── Interface Methods:\n", indent)
-				for j := 0; j < iface.NumMethods(); j++ {
-					method := iface.Method(j)
-					fmt.Printf("%s    │   ├── %s: %s\n", indent, method.Name(), method.Type())
-				}
-			}
-		}
-
-		// Handle functions and methods
-		if fn, ok := obj.(*types.Func); ok {
-			fmt.Printf("%s    ├── Function Signature: %s\n", indent, fn.Type())
-		}
-
-		// Handle nested methods in named types
-		if named, ok := obj.Type().(*types.Named); ok {
-			for i := 0; i < named.NumMethods(); i++ {
-				method := named.Method(i)
-				fmt.Printf("%s    ├── Method: %s (%s)\n", indent, method.Name(), method.Type())
-			}
+		// Check if it's the last element in the scope level
+		if i == len(names)-1 {
+			// Last item in scope, no separator at the end
+			printObject(indent, name, obj)
+		} else {
+			// Not the last item, use a separator
+			printObject(indent, name, obj)
 		}
 	}
 
-	// Handle nested scopes
+	// Recursively handle nested scopes (child scopes)
 	for i := 0; i < scope.NumChildren(); i++ {
-		PrintScope(scope.Child(i), depth+1)
+		childScope := scope.Child(i)
+		if childScope != nil {
+			// Print child scopes recursively
+			PrintScope(childScope, depth+1)
+		}
 	}
 }
