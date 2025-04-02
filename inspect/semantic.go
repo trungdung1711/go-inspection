@@ -29,7 +29,7 @@ func printObject(indent string, name string, obj types.Object) {
 			resultStr = append(resultStr, results.At(i).Type().String())
 		}
 		// Print function details
-		fmt.Printf("%s├── %s: func()\n", indent, name)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
 		fmt.Printf("%s│   ├── Parameters: [%s]\n", indent, strings.Join(paramStr, ", "))
 		fmt.Printf("%s│   └── Returns: [%s]\n", indent, strings.Join(resultStr, ", "))
 		return
@@ -41,40 +41,36 @@ func printObject(indent string, name string, obj types.Object) {
 			fieldDetails = append(fieldDetails, fmt.Sprintf("%s: %s", field.Name(), field.Type()))
 		}
 		// Print struct details
-		fmt.Printf("%s├── %s: struct\n", indent, name)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
 		for _, fieldDetail := range fieldDetails {
 			fmt.Printf("%s│   └── %s\n", indent, fieldDetail)
 		}
 		return
 	case *types.Basic:
-		// Basic types (int, string, etc.)
-		typeDetails = fmt.Sprintf("basic type, %s", t.String())
 		// Print basic type details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
 		return
 	case *types.Array:
-		// Array type: print length and element type
-		typeDetails = fmt.Sprintf("array of %s with length %d", t.Elem(), t.Len())
-		// Print array details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		// Print array type details
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
 		return
 	case *types.Slice:
 		// Slice type: print element type
 		typeDetails = fmt.Sprintf("slice of %s", t.Elem())
 		// Print slice details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
 		return
 	case *types.Map:
 		// Map type: print key and value types
 		typeDetails = fmt.Sprintf("map with key type %s and value type %s", t.Key(), t.Elem())
 		// Print map details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
 		return
 	case *types.Named:
 		// Named types (e.g., struct, interface)
 		typeDetails = fmt.Sprintf("named type, %s", t.Obj().Name())
 		// Print named type details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
 		return
 	case *types.Interface:
 		// Interface type: print the methods it defines
@@ -84,7 +80,7 @@ func printObject(indent string, name string, obj types.Object) {
 			methodDetails = append(methodDetails, fmt.Sprintf("%s: %s", method.Name(), method.Type()))
 		}
 		// Print interface details with methods
-		fmt.Printf("%s├── %s: interface\n", indent, name)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: interface\n", indent, name, obj, objType, t)
 		for _, methodDetail := range methodDetails {
 			fmt.Printf("%s│   └── %s\n", indent, methodDetail)
 		}
@@ -93,7 +89,7 @@ func printObject(indent string, name string, obj types.Object) {
 		// Default case for other types
 		typeDetails = objType.String()
 		// Print default type details
-		fmt.Printf("%s├── %s: %s\n", indent, name, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
 		return
 	}
 }
