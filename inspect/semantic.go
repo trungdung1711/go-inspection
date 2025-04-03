@@ -10,90 +10,120 @@ import (
 func printObject(indent string, name string, obj types.Object) {
 	// Prepare the type of the object
 	objType := obj.Type()
-
-	// Prepare additional details about the object
-	var typeDetails string
+	underlyingType := objType.Underlying()
 
 	// Switch to determine the type of the object and provide specific details
-	switch t := objType.Underlying().(type) {
+	switch t := objType.(type) {
 	case *types.Signature:
 		// Function signature: print parameters and return types
-		params := t.Params()
-		results := t.Results()
-		paramStr := []string{}
-		for i := 0; i < params.Len(); i++ {
-			paramStr = append(paramStr, params.At(i).Type().String())
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   ├── Underlying: %T\n", indent, underlyingType)
+
+		// Print parameters
+		if t.Params().Len() > 0 {
+			fmt.Printf("%s│   ├── Parameters:\n", indent)
+			for i := 0; i < t.Params().Len(); i++ {
+				param := t.Params().At(i)
+				fmt.Printf("%s│   │   ├── %s: %s\n", indent, param.Name(), param.Type())
+			}
 		}
-		resultStr := []string{}
-		for i := 0; i < results.Len(); i++ {
-			resultStr = append(resultStr, results.At(i).Type().String())
+
+		// Print return values
+		if t.Results().Len() > 0 {
+			fmt.Printf("%s│   └── Returns:\n", indent)
+			for i := 0; i < t.Results().Len(); i++ {
+				result := t.Results().At(i)
+				fmt.Printf("%s│       ├── %s\n", indent, result.Type())
+			}
 		}
-		// Print function details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
-		fmt.Printf("%s│   ├── Parameters: [%s]\n", indent, strings.Join(paramStr, ", "))
-		fmt.Printf("%s│   └── Returns: [%s]\n", indent, strings.Join(resultStr, ", "))
 		return
 	case *types.Struct:
-		// Struct type: print the number of fields and their types
-		fieldDetails := []string{}
-		for i := 0; i < t.NumFields(); i++ {
-			field := t.Field(i)
-			fieldDetails = append(fieldDetails, fmt.Sprintf("%s: %s", field.Name(), field.Type()))
-		}
-		// Print struct details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
-		for _, fieldDetail := range fieldDetails {
-			fmt.Printf("%s│   └── %s\n", indent, fieldDetail)
+		// Struct type: print the fields
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   ├── Underlying: %T\n", indent, underlyingType)
+
+		if t.NumFields() > 0 {
+			fmt.Printf("%s│   └── Fields:\n", indent)
+			for i := 0; i < t.NumFields(); i++ {
+				field := t.Field(i)
+				fmt.Printf("%s│       ├── %s: %s\n", indent, field.Name(), field.Type())
+			}
 		}
 		return
 	case *types.Basic:
 		// Print basic type details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   └── Underlying: %T\n", indent, underlyingType)
 		return
 	case *types.Array:
 		// Print array type details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]\n", indent, name, obj, objType, t)
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   └── Underlying: %T\n", indent, underlyingType)
 		return
 	case *types.Slice:
-		// Slice type: print element type
-		typeDetails = fmt.Sprintf("slice of %s", t.Elem())
-		// Print slice details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
+		// Print slice type details
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   └── Underlying: %T\n", indent, underlyingType)
 		return
 	case *types.Map:
-		// Map type: print key and value types
-		typeDetails = fmt.Sprintf("map with key type %s and value type %s", t.Key(), t.Elem())
-		// Print map details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
+		// Print map type details
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   └── Underlying: %T\n", indent, underlyingType)
 		return
 	case *types.Named:
-		// Named types (e.g., struct, interface)
-		typeDetails = fmt.Sprintf("named type, %s", t.Obj().Name())
 		// Print named type details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   ├── Underlying: %T\n", indent, underlyingType)
+
+		// If the underlying type is a struct, print its fields
+		if structType, ok := underlyingType.(*types.Struct); ok {
+			fmt.Printf("%s│   ├── Fields:\n", indent)
+			for i := 0; i < structType.NumFields(); i++ {
+				field := structType.Field(i)
+				fmt.Printf("%s│   │   ├── %s: %s\n", indent, field.Name(), field.Type())
+			}
+		}
+
+		// Print methods of the named type
+		if t.NumMethods() > 0 {
+			fmt.Printf("%s│   └── Methods:\n", indent)
+			for i := 0; i < t.NumMethods(); i++ {
+				method := t.Method(i)
+				fmt.Printf("%s│       ├── %s: %s\n", indent, method.Name(), method.Type())
+			}
+		}
 		return
 	case *types.Interface:
 		// Interface type: print the methods it defines
-		methodDetails := []string{}
-		for i := 0; i < t.NumMethods(); i++ {
-			method := t.Method(i)
-			methodDetails = append(methodDetails, fmt.Sprintf("%s: %s", method.Name(), method.Type()))
-		}
-		// Print interface details with methods
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: interface\n", indent, name, obj, objType, t)
-		for _, methodDetail := range methodDetails {
-			fmt.Printf("%s│   └── %s\n", indent, methodDetail)
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   ├── Underlying: %T\n", indent, underlyingType)
+
+		if t.NumMethods() > 0 {
+			fmt.Printf("%s│   └── Methods:\n", indent)
+			for i := 0; i < t.NumMethods(); i++ {
+				method := t.Method(i)
+				fmt.Printf("%s│       ├── %s: %s\n", indent, method.Name(), method.Type())
+			}
 		}
 		return
 	default:
 		// Default case for other types
-		typeDetails = objType.String()
-		// Print default type details
-		fmt.Printf("%s├── %s [Object Type: %T][Type: %T][Underlying: %T]: %s\n", indent, name, obj, objType, t, typeDetails)
+		fmt.Printf("%s├── %s [Object Type: %T]\n", indent, name, obj)
+		fmt.Printf("%s│   ├── Type: %T\n", indent, objType)
+		fmt.Printf("%s│   └── Underlying: %T\n", indent, underlyingType)
 		return
 	}
 }
 
+// print the scope in a tree-like structure
 func PrintScope(scope *types.Scope, depth int) {
 	if scope == nil {
 		return
